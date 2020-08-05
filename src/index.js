@@ -1,6 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
+import {
+  ApolloClient,
+  ApolloProvider,
+  InMemoryCache,
+  ApolloLink,
+  HttpLink,
+} from '@apollo/client';
+import { onError } from '@apollo/client/link/error';
+import { RetryLink } from '@apollo/client/link/retry';
 
 import App from './App';
 import * as serviceWorker from './serviceWorker';
@@ -9,14 +17,36 @@ import './style.css';
 
 const GITHUB_BASE_URL = 'https://api.github.com/graphql';
 
-const cache = new InMemoryCache();
-
-const client = new ApolloClient({
-  cache,
+const httpLink = new HttpLink({
   uri: GITHUB_BASE_URL,
   headers: {
     authorization: `Bearer ${process.env.REACT_APP_GITHUB_PERSONAL_ACCESS_TOKEN}`,
   },
+});
+
+const retryLink = new RetryLink();
+
+const errorLink = onError(({ graphQLErrors, networkError }) => {
+  if (graphQLErrors) {
+    graphQLErrors.map(({ message, locations, path }) =>
+      console.log(
+        `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`,
+      ),
+    );
+  }
+
+  if (networkError) {
+    console.log(`[Network error]: ${networkError}`);
+  }
+});
+
+const link = ApolloLink.from([retryLink, errorLink, httpLink]);
+
+const cache = new InMemoryCache();
+
+const client = new ApolloClient({
+  link,
+  cache,
 });
 
 ReactDOM.render(

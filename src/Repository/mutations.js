@@ -6,9 +6,6 @@ export const STAR_REPOSITORY = gql`
       starrable {
         id
         viewerHasStarred
-        stargazers {
-          totalCount
-        }
       }
     }
   }
@@ -20,9 +17,6 @@ export const UNSTAR_REPOSITORY = gql`
       starrable {
         id
         viewerHasStarred
-        stargazers {
-          totalCount
-        }
       }
     }
   }

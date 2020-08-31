@@ -21,6 +21,57 @@ const VIEWER_SUBSCRIPTIONS = {
 const isWatch = (viewerSubscription) =>
   viewerSubscription === VIEWER_SUBSCRIPTIONS.SUBSCRIBED;
 
+const updateAddStar = (
+  client,
+  {
+    data: {
+      addStar: {
+        starrable: { id, viewerHasStarred },
+      },
+    },
+  },
+) =>
+  client.writeFragment({
+    id: `Repository:${id}`,
+    fragment: REPOSITORY_FRAGMENT,
+    data: getUpdatedStarData(client, id, viewerHasStarred),
+  });
+
+const updateRemoveStar = (
+  client,
+  {
+    data: {
+      removeStar: {
+        starrable: { id, viewerHasStarred },
+      },
+    },
+  },
+) => {
+  client.writeFragment({
+    id: `Repository:${id}`,
+    fragment: REPOSITORY_FRAGMENT,
+    data: getUpdatedStarData(client, id, viewerHasStarred),
+  });
+};
+
+const getUpdatedStarData = (client, id, viewerHasStarred) => {
+  const repository = client.readFragment({
+    id: `Repository:${id}`,
+    fragment: REPOSITORY_FRAGMENT,
+  });
+
+  let { totalCount } = repository.stargazers;
+  totalCount = viewerHasStarred ? totalCount + 1 : totalCount - 1;
+
+  return {
+    ...repository,
+    stargazers: {
+      ...repository.stargazers,
+      totalCount,
+    },
+  };
+};
+
 const updateWatch = (
   client,
   {
@@ -36,7 +87,7 @@ const updateWatch = (
     fragment: REPOSITORY_FRAGMENT,
   });
 
-  let totalCount = repository.watchers.totalCount;
+  let { totalCount } = repository.watchers;
   totalCount = isWatch(viewerSubscription) ? totalCount + 1 : totalCount - 1;
 
   client.writeFragment({
@@ -64,14 +115,52 @@ const RepositoryItem = ({
   viewerSubscription,
   viewerHasStarred,
 }) => {
-  const [addStar] = useMutation(STAR_REPOSITORY, { variables: { id } });
-  const [removeStar] = useMutation(UNSTAR_REPOSITORY, { variables: { id } });
+  const [addStar] = useMutation(STAR_REPOSITORY, {
+    variables: { id },
+    optimisticResponse: {
+      addStar: {
+        __typename: 'Mutation',
+        starrable: {
+          __typename: 'Repository',
+          id,
+          viewerHasStarred: !viewerHasStarred,
+        },
+      },
+    },
+    update: updateAddStar,
+  });
+  const [removeStar] = useMutation(UNSTAR_REPOSITORY, {
+    variables: { id },
+    optimisticResponse: {
+      removeStar: {
+        __typename: 'Mutation',
+        starrable: {
+          __typename: 'Repository',
+          id,
+          viewerHasStarred: !viewerHasStarred,
+        },
+      },
+    },
+    update: updateRemoveStar,
+  });
   const [updateSubscription] = useMutation(WATCH_REPOSITORY, {
     variables: {
       id,
       viewerSubscription: isWatch(viewerSubscription)
         ? VIEWER_SUBSCRIPTIONS.UNSUBSCRIBED
         : VIEWER_SUBSCRIPTIONS.SUBSCRIBED,
+    },
+    optimisticResponse: {
+      updateSubscription: {
+        __typename: 'Mutation',
+        subscribable: {
+          __typename: 'Repository',
+          id,
+          viewerSubscription: isWatch(viewerSubscription)
+            ? VIEWER_SUBSCRIPTIONS.UNSUBSCRIBED
+            : VIEWER_SUBSCRIPTIONS.SUBSCRIBED,
+        },
+      },
     },
     update: updateWatch,
   });

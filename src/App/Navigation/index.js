@@ -8,30 +8,6 @@ import Input from '../../Input';
 
 import './style.css';
 
-const Navigation = ({
-  location: { pathname },
-  organizationName,
-  onOrganizationSearch,
-}) => {
-  return (
-    <header className="Navigation">
-      <div className="Navigation-link">
-        <Link to={routes.PROFILE}>Profile</Link>
-      </div>
-      <div className="Navigation-link">
-        <Link to={routes.ORGANIZATION}>Organization</Link>
-      </div>
-
-      {pathname === routes.ORGANIZATION && (
-        <OrganizationSearch
-          organizationName={organizationName}
-          onOrganizationSearch={onOrganizationSearch}
-        />
-      )}
-    </header>
-  );
-};
-
 const OrganizationSearch = ({ organizationName, onOrganizationSearch }) => {
   const [value, setValue] = useState(organizationName);
 
@@ -54,6 +30,30 @@ const OrganizationSearch = ({ organizationName, onOrganizationSearch }) => {
         </Button>
       </form>
     </div>
+  );
+};
+
+const Navigation = ({
+  location: { pathname },
+  organizationName,
+  onOrganizationSearch,
+}) => {
+  return (
+    <header className="Navigation">
+      <div className="Navigation-link">
+        <Link to={routes.PROFILE}>Profile</Link>
+      </div>
+      <div className="Navigation-link">
+        <Link to={routes.ORGANIZATION}>Organization</Link>
+      </div>
+
+      {pathname === routes.ORGANIZATION && (
+        <OrganizationSearch
+          organizationName={organizationName}
+          onOrganizationSearch={onOrganizationSearch}
+        />
+      )}
+    </header>
   );
 };
 

@@ -22,7 +22,7 @@ const GET_REPOSITORIES_OF_CURRENT_USER = gql`
 `;
 
 function Profile() {
-  const { loading, error, data } = useQuery(GET_REPOSITORIES_OF_CURRENT_USER);
+  const { data, loading, error } = useQuery(GET_REPOSITORIES_OF_CURRENT_USER);
 
   if (loading) return <Loading />;
   if (error) return <ErrorMessage error={error} />;

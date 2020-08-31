@@ -21,12 +21,12 @@ const VIEWER_SUBSCRIPTIONS = {
 const isWatch = (viewerSubscription) =>
   viewerSubscription === VIEWER_SUBSCRIPTIONS.SUBSCRIBED;
 
-const updateAddStar = (
+const updateWatch = (
   client,
   {
     data: {
-      addStar: {
-        starrable: { id },
+      updateSubscription: {
+        subscribable: { id, viewerSubscription },
       },
     },
   },
@@ -36,15 +36,16 @@ const updateAddStar = (
     fragment: REPOSITORY_FRAGMENT,
   });
 
-  const totalCount = repository.stargazers.totalCount + 1;
+  let totalCount = repository.watchers.totalCount;
+  totalCount = isWatch(viewerSubscription) ? totalCount + 1 : totalCount - 1;
 
   client.writeFragment({
     id: `Repository:${id}`,
     fragment: REPOSITORY_FRAGMENT,
     data: {
       ...repository,
-      stargazers: {
-        ...repository.stargazers,
+      watchers: {
+        ...repository.watchers,
         totalCount,
       },
     },
@@ -72,6 +73,7 @@ const RepositoryItem = ({
         ? VIEWER_SUBSCRIPTIONS.UNSUBSCRIBED
         : VIEWER_SUBSCRIPTIONS.SUBSCRIBED,
     },
+    update: updateWatch,
   });
 
   return (

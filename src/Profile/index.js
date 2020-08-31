@@ -37,14 +37,15 @@ function Profile() {
     },
   );
 
-  if (loading && !data?.viewer) return <Loading />;
   if (error) return <ErrorMessage error={error} />;
+  if (loading && !data?.viewer) return <Loading />;
 
   return (
     <RepositoryList
       repositories={data.viewer.repositories}
       loading={loading}
       fetchMore={fetchMore}
+      entry={'viewer'}
     />
   );
 }

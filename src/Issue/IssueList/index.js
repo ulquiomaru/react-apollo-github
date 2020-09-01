@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { gql, useQuery } from '@apollo/client';
+import { gql, useQuery, useApolloClient, ApolloConsumer } from '@apollo/client';
 
 import IssueItem from '../IssueItem';
 import FetchMore from '../../FetchMore';
@@ -113,7 +113,7 @@ const IssueList = ({
 const Issues = ({ repositoryOwner, repositoryName }) => {
   const [issueState, setIssueState] = useState(ISSUE_STATES.NONE);
 
-  const { data, loading, error, fetchMore } = useQuery(
+  const { data, loading, error, fetchMore, client } = useQuery(
     GET_ISSUES_OF_REPOSITORY,
     {
       variables: {
@@ -149,14 +149,72 @@ const Issues = ({ repositoryOwner, repositoryName }) => {
 
   return (
     <div className="Issues">
-      <ButtonUnobtrusive
-        onClick={() => setIssueState(TRANSITION_STATE[issueState])}
-      >
-        {TRANSITION_LABELS[issueState]}
-      </ButtonUnobtrusive>
+      <IssueFilter
+        issueState={issueState}
+        setIssueState={setIssueState}
+        repositoryOwner={repositoryOwner}
+        repositoryName={repositoryName}
+        client={client}
+      />
 
       {isShow(issueState) && getIssueContent()}
     </div>
+  );
+};
+
+const prefetchIssues = ({
+  client,
+  issueState,
+  repositoryOwner,
+  repositoryName,
+}) => {
+  const nextIssueState = TRANSITION_STATE[issueState];
+
+  if (isShow(nextIssueState)) {
+    client.query({
+      query: GET_ISSUES_OF_REPOSITORY,
+      variables: {
+        issueState: nextIssueState,
+        repositoryOwner,
+        repositoryName,
+      },
+    });
+  }
+};
+
+const IssueFilter = ({
+  issueState,
+  setIssueState,
+  repositoryOwner,
+  repositoryName,
+  client,
+}) => {
+  // const client = useApolloClient();
+
+  // return (
+  //   <ApolloConsumer>
+  //     {(client) => (
+  //       <ButtonUnobtrusive
+  //         onClick={() => setIssueState(TRANSITION_STATE[issueState])}
+  //         onMouseOver={() =>
+  //           prefetchIssues(client, issueState, repositoryOwner, repositoryName)
+  //         }
+  //       >
+  //         {TRANSITION_LABELS[issueState]}
+  //       </ButtonUnobtrusive>
+  //     )}
+  //   </ApolloConsumer>
+  // );
+
+  return (
+    <ButtonUnobtrusive
+      onClick={() => setIssueState(TRANSITION_STATE[issueState])}
+      onMouseOver={() =>
+        prefetchIssues(client, issueState, repositoryOwner, repositoryName)
+      }
+    >
+      {TRANSITION_LABELS[issueState]}
+    </ButtonUnobtrusive>
   );
 };
 
